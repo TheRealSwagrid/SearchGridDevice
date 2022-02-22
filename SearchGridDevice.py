@@ -15,6 +15,7 @@ class SearchGridDevice(AbstractVirtualCapability):
         formatPrint(self, f"Calculating new Position to fly to from: {params}")
         self.invoke_async("GetISSECopterPosition", {}, self.asyncFunc)
         formatPrint(self, json.dumps(self.invoke_sync("GetTestFieldBoundaries", {})) + " FROM SYNCED")
+        formatPrint(self, f"Ended SEARCH!")
         return {"Position3D": [0., 0., 0.]}
 
     def loop(self):

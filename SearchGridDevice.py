@@ -9,6 +9,7 @@ from AbstractVirtualCapability import AbstractVirtualCapability, VirtualCapabili
 class SearchGridDevice(AbstractVirtualCapability):
     def __init__(self, server):
         super().__init__(server)
+        self.uri = "SearchGridDevice"
         self.ISSECopterPosition = [0., 0., 0.]
 
     def SearchGridGetNextPosition(self, params: dict) -> dict:

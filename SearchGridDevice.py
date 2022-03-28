@@ -14,12 +14,12 @@ class SearchGridDevice(AbstractVirtualCapability):
         self.ISSECopterPosition = [0., 0., 0.]
 
     def SearchGridGetNextPosition(self, params: dict) -> dict:
-        current_position = self.invoke_sync("GetISSECopterPosition", {})["Position3D"]
+        self.ISSECopterPosition = self.invoke_sync("GetISSECopterPosition", {})["Position3D"]
         test_field = self.invoke_sync("GetTestFieldBoundaries", {})
         pointa = test_field["TestFieldPointA"]
         pointb = test_field["TestFieldPointB"]
 
-        formatPrint(self, f"Calculating position from current_position: {current_position}, pointa: {pointa} and pointb: {pointb}")
+        formatPrint(self, f"Calculating position from current_position: {self.ISSECopterPosition}, pointa: {pointa} and pointb: {pointb}")
 
         x = random.uniform(pointa[0], pointb[0])
         y = random.uniform(pointa[1], pointb[1])

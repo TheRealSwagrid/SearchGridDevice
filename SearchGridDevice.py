@@ -1,4 +1,5 @@
 import json
+import random
 import signal
 import sys
 from threading import Thread
@@ -13,11 +14,17 @@ class SearchGridDevice(AbstractVirtualCapability):
         self.ISSECopterPosition = [0., 0., 0.]
 
     def SearchGridGetNextPosition(self, params: dict) -> dict:
-        formatPrint(self, f"Calculating new Position to fly to from: {params}")
-        self.invoke_async("GetISSECopterPosition", {}, self.asyncFunc)
-        formatPrint(self, json.dumps(self.invoke_sync("GetTestFieldBoundaries", {})) + " FROM SYNCED")
-        formatPrint(self, f"Ended SEARCH!")
-        return {"Position3D": [0., 0., 0.]}
+        current_position = self.invoke_sync("GetISSECopterPosition", {})["Position3D"]
+        test_field = self.invoke_sync("GetTestFieldBoundaries", {})
+        pointa = test_field["TestFieldPointA"]
+        pointb = test_field["TestFieldPointB"]
+
+        formatPrint(self, f"Calculating position from current_position: {current_position}, pointa: {pointa} and pointb: {pointb}")
+
+        x = random.uniform(pointa[0], pointb[0])
+        y = random.uniform(pointa[1], pointb[1])
+
+        return {"Position3D": [x, y, 1.]}
 
     def loop(self):
         pass

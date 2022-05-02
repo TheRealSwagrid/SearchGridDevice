@@ -12,6 +12,7 @@ class SearchGridDevice(AbstractVirtualCapability):
         super().__init__(server)
         self.uri = "SearchGridDevice"
         self.ISSECopterPosition = [0., 0., 0.]
+        self.last_position = [0,0]
 
     def SearchGridGetNextPosition(self, params: dict) -> dict:
         self.ISSECopterPosition = self.invoke_sync("GetISSECopterPosition", {})["Position3D"]
@@ -21,11 +22,29 @@ class SearchGridDevice(AbstractVirtualCapability):
 
         #formatPrint(self, f"Calculating position from current_position: {self.ISSECopterPosition}, pointa: {pointa} and pointb: {pointb}")
 
-        x = random.uniform(pointa[0], pointb[0])
-        y = random.uniform(pointa[1], pointb[1])
+        next_pos = self.last_position
+        next_pos[1] += 1
+        if next_pos[1] >= self.resolution:
+            next_pos[0] += 1
+            next_pos[1] = 0
+        if next_pos[0] >= self.resolution:
+            next_pos = [0,0]
+        self.last_position = next_pos
+        
+        return {"Position3D": self.GetMapWithResolution(test_field, 10, next_pos[0], next_pos[1])}
 
-        return {"Position3D": [x, y, 1.]}
+    def GetMapWithResolution(self, TestFieldBoundaries, res, x, y):
+        minX = min(TestFieldBoundaries[0][0], TestFieldBoundaries[1][0])
+        minY = min(TestFieldBoundaries[0][1], TestFieldBoundaries[1][1])
+        maxX = max(TestFieldBoundaries[0][0], TestFieldBoundaries[1][0])
+        maxY = max(TestFieldBoundaries[0][1], TestFieldBoundaries[1][1])
 
+        map = [[None for y in range(res)] for x in range(res)]
+        for i in range(res):
+            for j in range(res):
+                map[i][j] = [minX + i/(maxX - minX), minY + j/(maxY - minY), 1.]
+        return map[x][y]
+    
     def loop(self):
         pass
 

@@ -24,10 +24,10 @@ class SearchGridDevice(AbstractVirtualCapability):
 
         next_pos = self.last_position
         next_pos[1] += 1
-        if next_pos[1] >= self.resolution:
+        if next_pos[1] >= 10:
             next_pos[0] += 1
             next_pos[1] = 0
-        if next_pos[0] >= self.resolution:
+        if next_pos[0] >= 10:
             next_pos = [0,0]
         self.last_position = next_pos
         

@@ -1,9 +1,8 @@
 import json
-import random
-import signal
+from copy import copy
+import numpy
 import sys
-from threading import Thread
-from time import sleep
+
 
 from AbstractVirtualCapability import AbstractVirtualCapability, VirtualCapabilityServer, formatPrint
 
@@ -12,16 +11,18 @@ class SearchGridDevice(AbstractVirtualCapability):
         super().__init__(server)
         self.uri = "SearchGridDevice"
         self.ISSECopterPosition = [0., 0., 0.]
-        self.last_position = [0,0]
+        self.last_position = [0, 0]
         self.res = 6
+        self.mapper = None
 
     def SearchGridGetNextPosition(self, params: dict) -> dict:
         self.ISSECopterPosition = self.invoke_sync("GetISSECopterPosition", {})["Position3D"]
         test_field = self.invoke_sync("GetTestFieldBoundaries", {})
+        formatPrint(self, f"TestField: {test_field}")
         pointa = test_field["TestFieldPointA"]
         pointb = test_field["TestFieldPointB"]
 
-        #formatPrint(self, f"Calculating position from current_position: {self.ISSECopterPosition}, pointa: {pointa} and pointb: {pointb}")
+        formatPrint(self, f"Calculating position from current_position: {self.ISSECopterPosition}, pointa: {pointa} and pointb: {pointb}")
 
         next_pos = self.last_position
         next_pos[1] += 1
@@ -32,19 +33,31 @@ class SearchGridDevice(AbstractVirtualCapability):
             next_pos = [0,0]
         self.last_position = next_pos
         
-        return {"Position3D": self.GetMapWithResolution([pointa, pointb], self.res, next_pos[0], next_pos[1])}
+        return {"Position3D": self.GetMapWithResolution(self.res, [pointa, pointb], self.ISSECopterPosition)}
 
-    def GetMapWithResolution(self, TestFieldBoundaries, res, x, y):
+    def GetMapWithResolution(self, res, TestFieldBoundaries, copter_position):
+
         minX = min(TestFieldBoundaries[0][0], TestFieldBoundaries[1][0])
         minY = min(TestFieldBoundaries[0][1], TestFieldBoundaries[1][1])
         maxX = max(TestFieldBoundaries[0][0], TestFieldBoundaries[1][0])
         maxY = max(TestFieldBoundaries[0][1], TestFieldBoundaries[1][1])
 
-        map = [[None for y in range(res)] for x in range(res)]
-        for i in range(res):
-            for j in range(res):
-                map[i][j] = [minX + ((maxX - minX)/res) * i, minY + ((maxY - minY)/res) * j, 1.]
-        return map[x][y]
+        if self.mapper is None:
+            self.mapper = [[None for y in range(res)] for x in range(res)]
+            for i in range(res):
+                for j in range(res):
+                    self.mapper[i][j] = [minX + ((maxX - minX) / res) * i, minY + ((maxY - minY) / res) * j, .5]
+            self.mapper = numpy.array(self.mapper)
+
+        idx = (numpy.sum(numpy.abs(self.mapper - copter_position), axis=2))
+        ri, ci = idx.argmin() // idx.shape[1], idx.argmin() % idx.shape[1]
+        ret = (self.mapper[ri][ci]).tolist()
+        if max(ret) > 5:
+            self.mapper = None
+            return self.GetMapWithResolution(res, TestFieldBoundaries, copter_position)
+        self.mapper[ri][ci] = [100., 100., 100.]
+
+        return ret
     
     def loop(self):
         pass

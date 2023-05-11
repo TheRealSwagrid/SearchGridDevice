@@ -1,4 +1,5 @@
 import json
+import signal
 from copy import copy
 import numpy
 import sys
@@ -32,7 +33,8 @@ class SearchGridDevice(AbstractVirtualCapability):
         if next_pos[0] >= self.res:
             next_pos = [0,0]
         self.last_position = next_pos
-        
+
+
         return {"Position3D": self.GetMapWithResolution(self.res, [pointa, pointb], self.ISSECopterPosition)}
 
     def GetMapWithResolution(self, res, TestFieldBoundaries, copter_position):
@@ -75,7 +77,13 @@ if __name__ == "__main__":
         server = VirtualCapabilityServer(port)
         sgd = SearchGridDevice(server)
         sgd.start()
+        def signal_handler(sig, frame):
+            sgd.kill()
+            server.kill()
+
+        signal.signal(signal.SIGINT, signal_handler)
         sgd.join()
+        signal.pause()
         # Needed for properly closing, when program is being stopped wit a Keyboard Interrupt
     except Exception as e:
         print(f"[ERROR] {repr(e)}")
